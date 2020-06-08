@@ -1,11 +1,10 @@
 [package]
 name = "blindspot"
-version = "1.0.0"
+version = "1.0.1"
 authors = ["xermicus <bigcyrill@hotmail.com>"]
 edition = "2018"
 repository = "https://github.com/xermicus/blindspot"
 license = "MIT"
-description = "Install and update single binary apps without any hassle"
 
 [[bin]]
 name="blindspot"

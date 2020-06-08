@@ -2,8 +2,8 @@
 [![Cargo](https://img.shields.io/crates/v/blindspot.svg)](https://crates.io/crates/blindspot)
 [![License: MIT](https://img.shields.io/badge/License-MIT-red.svg)](https://opensource.org/licenses/MIT)
 
-# The BlindSpot Package Manager
-Most of the software running on my linux computers are managed by official or community maintained repositories or various 3rd-party package managers.
+# The blindspot package manager
+Most of the software running on my linux computers is managed by official or community maintained repositories or various 3rd-party package managers.
 However, especially for newer software projects it can take a while for a package to become available even when using the most popular distros.
 Additionally, a tendency I started to notice about projects built with a language producing statically linked binaries:
 
@@ -62,6 +62,6 @@ blindspot completion >> ~/.bash_profile
 ```
 
 # Disclaimer
-Do not run this software as `root`! There's should be no reason to do so.
+Do not run this software as `root`! There should be no reason to do so.
 
 This tool is just a small hobby project and in no way trying to solve package management on linux as a whole.
