@@ -87,12 +87,12 @@ impl UI {
         let mut messages: Vec<String> = Vec::new();
         let mut bars: HashMap<String,Bar> = HashMap::new();
         let cls = format!(
-            "{}{}{}🔦 blindspot package manger{}", 
-            termion::clear::All, 
+            "{}{}🔦 blindspot package manger{}", 
             cursor::Goto(1, 1),
             style::Bold,
             style::Reset,
         );
+        self.draw(termion::clear::All.to_string()).await?;
 
         while let Ok((context, msg)) = self.stdout_recv.recv().await {
             // Update
