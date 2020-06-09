@@ -134,10 +134,11 @@ impl BSPM {
             handles.push(std::thread::spawn(move || {
                 smol::run(async move {
                     let result = pkg.update().await;
+                    let ctx = context("❌", &pkg.name).await;
                     if result.is_err() {
-                        context("❌", &pkg.name).await
-                            .notify(&format!("Update failed: {:?}", &result).replace("\n", ".")).await;
+                        ctx.notify(&format!("Update failed: {:?}", &result).replace("\n", ".")).await;
                     }
+                    ctx.quit().await.expect("UI failure");
                     result
                 })
             }));

@@ -27,7 +27,7 @@ pub enum Command {
         #[structopt(help = "Set archive type", short, long, possible_values = &bspm::installer::Archived::variants(), case_insensitive = false)]
         archive: Option<bspm::installer::Archived>,
     },
-    #[structopt(name = "remove", about = "Remove a package", alias = "delete")]
+    #[structopt(name = "remove", about = "Remove a package", alias = "uninstall", alias = "delete")]
     Remove {
         #[structopt(help = "Name of the package")]
         name: String,
