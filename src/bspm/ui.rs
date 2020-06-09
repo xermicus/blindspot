@@ -123,6 +123,9 @@ impl UI {
                 screen += &fmt_bar(i + 1, pbar.0, pbar.1);
             }
             screen += &format!("{}", cursor::Goto(1, min(t_y, (bars.len() + messages.len() + 2) as u16)));
+            if offset > 0 {
+                screen = termion::clear::All.to_string() + &screen;
+            }
             self.draw(screen).await?;
         }
         Err(anyhow!("UI failed to receive next message"))
