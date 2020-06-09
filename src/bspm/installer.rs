@@ -5,7 +5,7 @@ use std::time::Duration;
 
 use smol::{Task,Timer};
 use async_std::os::unix::fs::OpenOptionsExt;
-use async_std::fs::{File,copy,remove_file,set_permissions,OpenOptions};
+use async_std::fs::{File,copy,remove_file,set_permissions,OpenOptions,create_dir};
 use async_std::prelude::*;
 use anyhow::Context;
 use isahc::prelude::*;
@@ -165,6 +165,12 @@ impl Installer {
         let file_name = self.path.file_name()
             .unwrap_or_else(|| panic!("Invalid filename: {}", self.path.display()));
         let mut tmp_path = std::env::temp_dir();
+        tmp_path.push("blindspot");
+        if !tmp_path.exists() {
+            create_dir(&tmp_path)
+                .await
+                .unwrap_or_else(|_| panic!("Failed to create tmp dir: {}", &tmp_path.display()))
+        }
         tmp_path.push(file_name);
         Ok((
             OpenOptions::new()
