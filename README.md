@@ -27,9 +27,9 @@ I'm generally fine with this installation method, but it creates a problem: Thes
 Download a [release](https://github.com/xermicus/blindspot/releases) and run the `init` command that can install itself:
 ```bash
 cd ~/Downloads # assuming you downloaded it there
-chmod +x blindspot
-./blindspot init
-rm ./blindspot
+chmod +x blindspot_x86_64
+./blindspot_x86_64 init
+rm ./blindspot_x86_64
 ```
 This automatically creates the config file and installs `blindspot` into the current users local bin dir.
 
