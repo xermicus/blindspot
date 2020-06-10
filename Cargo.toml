@@ -1,6 +1,6 @@
 [package]
 name = "blindspot"
-version = "1.0.2"
+version = "1.0.3"
 authors = ["xermicus <bigcyrill@hotmail.com>"]
 edition = "2018"
 repository = "https://github.com/xermicus/blindspot"
