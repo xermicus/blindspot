@@ -87,8 +87,9 @@ impl UI {
         let mut messages: Vec<String> = Vec::new();
         let mut bars: HashMap<String,Bar> = HashMap::new();
         let cls = format!(
-            "{}{}🔦 blindspot package manger{}", 
+            "{}{}{}🔦 blindspot package manger{}", 
             cursor::Goto(1, 1),
+            termion::clear::CurrentLine,
             style::Bold,
             style::Reset,
         );
@@ -123,9 +124,6 @@ impl UI {
                 screen += &fmt_bar(i + 1, pbar.0, pbar.1);
             }
             screen += &format!("{}", cursor::Goto(1, min(t_y, (bars.len() + messages.len() + 2) as u16)));
-            if offset > 0 {
-                screen = termion::clear::All.to_string() + &screen;
-            }
             self.draw(screen).await?;
         }
         Err(anyhow!("UI failed to receive next message"))
@@ -142,7 +140,8 @@ impl UI {
 
 fn fmt_msg(context: String, message: String) -> String {
     format!(
-        "{}{}{}{} {}",
+        "{}{}{}{}{} {}",
+        termion::clear::CurrentLine,
         color::Fg(termion::color::LightCyan),
         style::Bold,
         context,
@@ -153,8 +152,9 @@ fn fmt_msg(context: String, message: String) -> String {
 
 fn fmt_bar(nth: usize, msg: &str, pbar: &Bar) -> String {
     format!(
-        "{}🚛 {}{}{} {}{}{}kb{}",
+        "{}{}🚛 {}{}{} {}{}{}kb{}",
         cursor::Goto(1, nth as u16 + 1),
+        termion::clear::CurrentLine,
         style::Italic,
         msg[..min(msg.len(), 64)].to_string(),
         style::Reset,
