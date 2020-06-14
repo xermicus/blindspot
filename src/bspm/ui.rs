@@ -87,7 +87,7 @@ impl UI {
         let mut messages: Vec<String> = Vec::new();
         let mut bars: HashMap<String, Bar> = HashMap::new();
         let cls = format!(
-            "{}{}{}🔦 blindspot package manger{}",
+            "{}{}{}🔦 blindspot package manager{}",
             cursor::Goto(1, 1),
             termion::clear::CurrentLine,
             style::Bold,
