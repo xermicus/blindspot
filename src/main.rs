@@ -4,13 +4,9 @@ use structopt::StructOpt;
 
 use cmd::Command;
 
-mod cmd;
 mod bspm;
+mod cmd;
 
 fn main() -> anyhow::Result<()> {
-    smol::run(async {
-        Command::from_args()
-            .go()
-            .await
-    })
+    smol::run(async { Command::from_args().go().await })
 }

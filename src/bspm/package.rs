@@ -1,13 +1,10 @@
-use std::str::FromStr;
-use anyhow::{Context,anyhow,bail};
+use anyhow::{anyhow, bail, Context};
 use chrono::prelude::*;
 use isahc::prelude::*;
 use serde_json::Value;
+use std::str::FromStr;
 
-use super::{
-    ui::context,
-    installer::Installer,
-};
+use super::{installer::Installer, ui::context};
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Package {
@@ -23,9 +20,10 @@ impl Package {
         let ctx = context("📦", &self.name).await;
         if self.installer.url.split('/').count() != 2 {
             self.release = Some(Release::Dated(Utc::now()));
-            return self.installer.install(&ctx).await
+            return self.installer.install(&ctx).await;
         }
-        let github_release: Value = self.github_get_latest_release(&self.installer.url)
+        let github_release: Value = self
+            .github_get_latest_release(&self.installer.url)
             .await
             .context("Failed to resolve GitHub repository")?;
         self.github = Some(self.installer.url.clone());
@@ -38,28 +36,33 @@ impl Package {
         let mut pkg = self.clone();
         let ctx = context("⛽", &self.name).await;
         ctx.notify("Updating package").await;
-        ctx.notify(&format!("Last update: {:?}", self.last_update)).await;
+        ctx.notify(&format!("Last update: {:?}", self.last_update))
+            .await;
         if pkg.github.is_none() {
             pkg.install().await?;
             pkg.last_update = Some(Utc::now());
-            return Ok(pkg)
+            return Ok(pkg);
         }
         let installed_release = match &pkg.release {
             Some(Release::Version(current)) => current.clone(),
-            _ => bail!("Corrupted package (please reinstall)")
+            _ => bail!("Corrupted package (please reinstall)"),
         };
         let github_release: Value = pkg
             .github_get_latest_release(pkg.github.as_ref().unwrap())
             .await
             .context("Failed to resolve GitHub repository")?;
         let latest_release = pkg.github_tag_name(&github_release)?;
-        ctx.notify(&format!("Installed release: {}", installed_release)).await;
-        ctx.notify(&format!("Latest release: {}", &latest_release)).await;
+        ctx.notify(&format!("Installed release: {}", installed_release))
+            .await;
+        ctx.notify(&format!("Latest release: {}", &latest_release))
+            .await;
         if latest_release == installed_release {
-            ctx.notify("Looks like the latest release is already installed").await;
-            return Ok(pkg)
+            ctx.notify("Looks like the latest release is already installed")
+                .await;
+            return Ok(pkg);
         }
-        ctx.notify(&format!("Other release available: {}", latest_release)).await;
+        ctx.notify(&format!("Other release available: {}", latest_release))
+            .await;
         pkg.installer.url = pkg.github_dl_url(&github_release).await?;
         pkg.install().await?;
         pkg.release = Some(Release::Version(latest_release));
@@ -86,7 +89,8 @@ impl Package {
             "Release {} ships {} assets...",
             self.github_tag_name(release)?,
             assets.len()
-        )).await;
+        ))
+        .await;
         for (i, asset) in assets.iter().enumerate() {
             ctx.notify(&format!(
                 "{}-> {}{}\t{:.2}mb\t{}",
@@ -95,7 +99,8 @@ impl Package {
                 termion::style::Reset,
                 f32::from_str(&asset["size"].to_string())? / 1_000_000.0,
                 asset["name"],
-            )).await;
+            ))
+            .await;
         }
         let pick = ctx.ask_number(0, assets.len(), "Choose one:").await?;
         match &assets[pick]["browser_download_url"] {
@@ -136,5 +141,5 @@ impl std::fmt::Display for Package {
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub enum Release {
     Version(String),
-    Dated(DateTime<Utc>)
+    Dated(DateTime<Utc>),
 }

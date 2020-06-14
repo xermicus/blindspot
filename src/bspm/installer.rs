@@ -1,23 +1,19 @@
-use std::pin::Pin;
-use std::path::PathBuf;
 use std::os::unix::fs::PermissionsExt;
+use std::path::PathBuf;
+use std::pin::Pin;
 use std::time::Duration;
 
-use smol::{Task,Timer};
-use async_std::os::unix::fs::OpenOptionsExt;
-use async_std::fs::{File,copy,remove_file,set_permissions,OpenOptions,create_dir};
-use async_std::prelude::*;
 use anyhow::Context;
-use isahc::prelude::*;
-use isahc::config::RedirectPolicy;
-use async_compression::futures::write::{
-    GzipDecoder,
-    BzDecoder,
-    XzDecoder,
-};
+use async_compression::futures::write::{BzDecoder, GzipDecoder, XzDecoder};
+use async_std::fs::{copy, create_dir, remove_file, set_permissions, File, OpenOptions};
+use async_std::os::unix::fs::OpenOptionsExt;
+use async_std::prelude::*;
 use async_tar::Archive;
+use isahc::config::RedirectPolicy;
+use isahc::prelude::*;
+use smol::{Task, Timer};
 
-use super::{ui,data_path};
+use super::{data_path, ui};
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Installer {
@@ -40,15 +36,21 @@ impl Installer {
             termion::style::Bold,
             compression,
             termion::style::Reset,
-        )).await;
+        ))
+        .await;
         let (file, tmp_path) = self.tmp_file().await?;
         ctx.notify(&format!("Fetching {}", &self.url)).await;
         self.download(ctx.clone(), compression.writer(file)).await?;
         if self.path.exists() {
-            let filename = self.path.as_path().file_name().expect("Install path was not a file name");
+            let filename = self
+                .path
+                .as_path()
+                .file_name()
+                .expect("Install path was not a file name");
             let mut target = data_path().await;
             target.push(filename);
-            move_exe(&self.path, &target).await
+            move_exe(&self.path, &target)
+                .await
                 .context(target.display().to_string())?;
             self.backup = Some(target);
         }
@@ -57,8 +59,9 @@ impl Installer {
 
     pub async fn revert(&mut self, ctx: &ui::Context) -> anyhow::Result<(), std::io::Error> {
         if self.backup.is_none() {
-            ctx.notify("No backup found for this package, doing nothing").await;
-            return Ok(())
+            ctx.notify("No backup found for this package, doing nothing")
+                .await;
+            return Ok(());
         }
         let src = self.backup.as_ref().unwrap();
         ctx.notify(&format!("From {}", src.display())).await;
@@ -72,11 +75,16 @@ impl Installer {
         if let Some(backup) = &self.backup {
             remove_file(backup).await?;
         }
-        ctx.notify(&format!("Deleting file {}", self.path.display())).await;
+        ctx.notify(&format!("Deleting file {}", self.path.display()))
+            .await;
         remove_file(&self.path).await
     }
 
-    async fn download(&self, ctx: ui::Context, mut body_writer: Pin<Box<dyn async_std::io::Write>>) -> anyhow::Result<()> {
+    async fn download(
+        &self,
+        ctx: ui::Context,
+        mut body_writer: Pin<Box<dyn async_std::io::Write>>,
+    ) -> anyhow::Result<()> {
         let mut response = Request::get(&self.url)
             .metrics(true)
             .redirect_policy(RedirectPolicy::Limit(50))
@@ -91,8 +99,11 @@ impl Installer {
         let progresser = Task::spawn(async move {
             loop {
                 let progress = metrics.download_progress();
-                ctx.progress(progress.0 / 1_000, progress.1 / 1_000, &url).await;
-                if progress.0 == progress.1 { break }
+                ctx.progress(progress.0 / 1_000, progress.1 / 1_000, &url)
+                    .await;
+                if progress.0 == progress.1 {
+                    break;
+                }
                 Timer::after(Duration::from_millis(20)).await;
             }
         });
@@ -104,65 +115,67 @@ impl Installer {
 
     fn guess_archive(&self) -> Archived {
         if let Some(a) = &self.archive {
-            return a.clone()
+            return a.clone();
         }
         if self.url.ends_with(".tar") {
-            return Archived::Tar
+            return Archived::Tar;
         }
         if self.url.ends_with(".tar.gz") {
-            return Archived::Tar
+            return Archived::Tar;
         }
         if self.url.ends_with(".tgz") {
-            return Archived::Tar
+            return Archived::Tar;
         }
         if self.url.ends_with(".tar.bz") {
-            return Archived::Tar
+            return Archived::Tar;
         }
         if self.url.ends_with(".tar.bz2") {
-            return Archived::Tar
+            return Archived::Tar;
         }
         if self.url.ends_with(".tbz") {
-            return Archived::Tar
+            return Archived::Tar;
         }
         if self.url.ends_with(".tar.xz") {
-            return Archived::Tar
+            return Archived::Tar;
         }
         if self.url.ends_with(".txz") {
-            return Archived::Tar
+            return Archived::Tar;
         }
         Archived::None
     }
 
     fn guess_compression(&self) -> Compression {
         if let Some(c) = &self.compression {
-            return c.clone()
+            return c.clone();
         }
         if self.url.ends_with(".gz") {
-            return Compression::Gzip
+            return Compression::Gzip;
         }
         if self.url.ends_with(".tgz") {
-            return Compression::Gzip
+            return Compression::Gzip;
         }
         if self.url.ends_with(".bz") {
-            return Compression::Bzip2
+            return Compression::Bzip2;
         }
         if self.url.ends_with(".bz2") {
-            return Compression::Bzip2
+            return Compression::Bzip2;
         }
         if self.url.ends_with(".tbz") {
-            return Compression::Bzip2
+            return Compression::Bzip2;
         }
         if self.url.ends_with(".xz") {
-            return Compression::Xz
+            return Compression::Xz;
         }
         if self.url.ends_with(".txz") {
-            return Compression::Xz
+            return Compression::Xz;
         }
         Compression::None
     }
 
-    async fn tmp_file(&self) -> anyhow::Result<(File,PathBuf)> {
-        let file_name = self.path.file_name()
+    async fn tmp_file(&self) -> anyhow::Result<(File, PathBuf)> {
+        let file_name = self
+            .path
+            .file_name()
             .unwrap_or_else(|| panic!("Invalid filename: {}", self.path.display()));
         let mut tmp_path = std::env::temp_dir();
         tmp_path.push("blindspot");
@@ -179,7 +192,7 @@ impl Installer {
                 .open(&tmp_path)
                 .await
                 .context("failed to create tmp file")?,
-            tmp_path
+            tmp_path,
         ))
     }
 }
@@ -191,8 +204,14 @@ pub enum Archived {
 }
 
 impl Archived {
-    async fn install(&self, ctx: &ui::Context, src: &PathBuf, dest: &PathBuf) -> anyhow::Result<()> {
-        ctx.notify(&format!("Installing into {}", dest.display())).await;
+    async fn install(
+        &self,
+        ctx: &ui::Context,
+        src: &PathBuf,
+        dest: &PathBuf,
+    ) -> anyhow::Result<()> {
+        ctx.notify(&format!("Installing into {}", dest.display()))
+            .await;
         match &self {
             Archived::None => move_exe(src, dest).await?,
             Archived::Tar => self.install_tar(ctx, src, dest).await?,
@@ -200,7 +219,12 @@ impl Archived {
         Ok(())
     }
 
-    async fn install_tar(&self, ctx: &ui::Context, src: &PathBuf, dest: &PathBuf) -> anyhow::Result<()> {
+    async fn install_tar(
+        &self,
+        ctx: &ui::Context,
+        src: &PathBuf,
+        dest: &PathBuf,
+    ) -> anyhow::Result<()> {
         ctx.notify("Choose a file from Tar archive...").await;
         let mut file_index = 0;
         let mut archive = Archive::new(async_std::fs::File::open(src).await?);
@@ -214,10 +238,13 @@ impl Archived {
                 termion::style::Reset,
                 f.header().size()? as f32 / 1_000_000.0,
                 f.header().path()?.display()
-            )).await;
+            ))
+            .await;
             file_index += 1;
         }
-        let pick = ctx.ask_number(0, file_index, "Enter the file number to install:").await?;
+        let pick = ctx
+            .ask_number(0, file_index, "Enter the file number to install:")
+            .await?;
         file_index = 0;
         let mut a = Archive::new(async_std::fs::File::open(src).await?);
         let mut e = a.entries()?;
@@ -233,7 +260,7 @@ impl Archived {
                     .open(dest)
                     .await?;
                 async_std::io::copy(&mut f, &mut target_file).await?;
-                break
+                break;
             }
             file_index += 1;
         }
@@ -251,7 +278,7 @@ impl std::str::FromStr for Archived {
         match s {
             "tar" => Ok(Archived::Tar),
             "none" => Ok(Archived::None),
-            _ => Err(format!("Invalid archive: {}", s))
+            _ => Err(format!("Invalid archive: {}", s)),
         }
     }
 }
@@ -287,7 +314,7 @@ impl std::str::FromStr for Compression {
             "bzip2" => Ok(Compression::Gzip),
             "xz" => Ok(Compression::Gzip),
             "none" => Ok(Compression::None),
-            _ => Err(format!("Invalid compression: {}", s))
+            _ => Err(format!("Invalid compression: {}", s)),
         }
     }
 }

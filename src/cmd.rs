@@ -1,24 +1,32 @@
 use std::io;
 
+use anyhow::Context;
 use structopt::clap::Shell;
 use structopt::StructOpt;
-use anyhow::Context;
 
-use crate::bspm::{self,*};
+use crate::bspm::{self, *};
 
 #[derive(StructOpt, Debug)]
 #[structopt(about = "The blindspot package manager")]
 pub enum Command {
-    #[structopt(name = "init", about = "Create a fresh config file and automatically install the blindspot package manager binary")]
+    #[structopt(
+        name = "init",
+        about = "Create a fresh config file and automatically install the blindspot package manager binary"
+    )]
     Init {
         #[structopt(long, short, help = "Do not install blindspot automatically")]
         no_install: bool,
     },
-    #[structopt(name = "install", about = "Install a single binary application from a download static URL or github repo")]
+    #[structopt(
+        name = "install",
+        about = "Install a single binary application from a download static URL or github repo"
+    )]
     Install {
         #[structopt(help = "Name of the package. This can be anything you want.")]
         name: String,
-        #[structopt(help = "Either a direct http download URL (the URL should not change over time and always provide the latest version) or a github repo in the form of `username/repository`.")]
+        #[structopt(
+            help = "Either a direct http download URL (the URL should not change over time and always provide the latest version) or a github repo in the form of `username/repository`."
+        )]
         url: String,
         #[structopt(short, long, help = "Install anyways and overwrite existing versions")]
         force: bool,
@@ -27,7 +35,12 @@ pub enum Command {
         #[structopt(help = "Set archive type", short, long, possible_values = &bspm::installer::Archived::variants(), case_insensitive = false)]
         archive: Option<bspm::installer::Archived>,
     },
-    #[structopt(name = "remove", about = "Remove a package", alias = "uninstall", alias = "delete")]
+    #[structopt(
+        name = "remove",
+        about = "Remove a package",
+        alias = "uninstall",
+        alias = "delete"
+    )]
     Remove {
         #[structopt(help = "Name of the package")]
         name: String,
@@ -61,39 +74,51 @@ impl Command {
             .context("BSPM failed to start\nTry `bspm init` if you are running it the first time");
         match self {
             Command::Init { no_install } => {
-                BSPM::default()
-                    .create_config()
-                    .await?;
+                BSPM::default().create_config().await?;
                 if !no_install {
                     BSPM::new()
                         .await?
-                        .install("blindspot".to_string(), "xermicus/blindspot".to_string(), false, None, None)
+                        .install(
+                            "blindspot".to_string(),
+                            "xermicus/blindspot".to_string(),
+                            false,
+                            None,
+                            None,
+                        )
                         .await?;
                 }
-                ui::context("🎉", "blindspot").await
-                    .notify("Initialization successful").await;
+                ui::context("🎉", "blindspot")
+                    .await
+                    .notify("Initialization successful")
+                    .await;
                 ui::context("🐚", "blindspot").await
                     .notify("Run `blindspot completion --help` to see if completion for your shell is available" ).await;
-            },
-            Command::Install { name, url, force, compression, archive } => {
+            }
+            Command::Install {
+                name,
+                url,
+                force,
+                compression,
+                archive,
+            } => {
                 bspm?
-                    .install(name.clone(), url.clone(), *force, compression.clone(), archive.clone())
+                    .install(
+                        name.clone(),
+                        url.clone(),
+                        *force,
+                        compression.clone(),
+                        archive.clone(),
+                    )
                     .await?;
-            },
+            }
             Command::Remove { name } => {
-                bspm?
-                    .delete(name)
-                    .await?;
+                bspm?.delete(name).await?;
             }
             Command::Revert { name } => {
-                bspm?
-                    .revert(name)
-                    .await?;
+                bspm?.revert(name).await?;
             }
             Command::Update { packages } => {
-                bspm?
-                    .update(packages.to_vec())
-                    .await?;
+                bspm?.update(packages.to_vec()).await?;
             }
             Command::List { debug } => {
                 if *debug {
@@ -101,20 +126,16 @@ impl Command {
                 } else {
                     bspm?.list();
                 }
-                return Ok(())
+                return Ok(());
             }
             Command::Completion { shell } => {
                 let stdout = io::stdout();
                 let mut handle = stdout.lock();
-                Command::clap()
-                    .gen_completions_to(env!("CARGO_PKG_NAME"), *shell, &mut handle);
-                return Ok(())
-            },
+                Command::clap().gen_completions_to(env!("CARGO_PKG_NAME"), *shell, &mut handle);
+                return Ok(());
+            }
         }
-        ui::context("", "")
-            .await
-            .quit()
-            .await?;
+        ui::context("", "").await.quit().await?;
         Ok(())
     }
 }

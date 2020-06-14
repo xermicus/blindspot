@@ -1,13 +1,13 @@
-use std::collections::HashMap;
-use std::cmp::min;
 use anyhow::anyhow;
-use smol::Task;
-use async_std::io::{stdin,stdout};
-use async_std::sync::{channel,Sender,Receiver,Mutex,RecvError};
+use async_std::io::{stdin, stdout};
 use async_std::prelude::*;
-use progress_string::*;
-use termion::{color,cursor,style};
+use async_std::sync::{channel, Mutex, Receiver, RecvError, Sender};
 use once_cell::sync::Lazy;
+use progress_string::*;
+use smol::Task;
+use std::cmp::min;
+use std::collections::HashMap;
+use termion::{color, cursor, style};
 
 static CONTEXT: Lazy<Mutex<Context>> = Lazy::new(|| {
     let ui = UI::new();
@@ -23,15 +23,15 @@ pub async fn context(prefix: &str, name: &str) -> Context {
 }
 
 pub struct UI {
-    stdout_send: Sender<(String,Message)>,
-    stdout_recv: Receiver<(String,Message)>,
+    stdout_send: Sender<(String, Message)>,
+    stdout_recv: Receiver<(String, Message)>,
     stdin_send: Sender<String>,
     stdin_recv: Receiver<String>,
 }
 
 pub enum Message {
     Notification(String),
-    Progress((u64,u64,String)),
+    Progress((u64, u64, String)),
     Question(String),
     Quit(Sender<()>),
 }
@@ -68,7 +68,7 @@ impl UI {
             let chr = std::str::from_utf8(&buffer)?;
             if chr == "\n" {
                 self.stdin_send.send(answer_input).await;
-                break
+                break;
             }
             answer_input += chr;
         }
@@ -85,9 +85,9 @@ impl UI {
     async fn mainloop(self) -> anyhow::Result<()> {
         // Init
         let mut messages: Vec<String> = Vec::new();
-        let mut bars: HashMap<String,Bar> = HashMap::new();
+        let mut bars: HashMap<String, Bar> = HashMap::new();
         let cls = format!(
-            "{}{}{}🔦 blindspot package manger{}", 
+            "{}{}{}🔦 blindspot package manger{}",
             cursor::Goto(1, 1),
             termion::clear::CurrentLine,
             style::Bold,
@@ -123,7 +123,10 @@ impl UI {
             for (i, pbar) in bars.iter().enumerate() {
                 screen += &fmt_bar(i + 1, pbar.0, pbar.1);
             }
-            screen += &format!("{}", cursor::Goto(1, min(t_y, (bars.len() + messages.len() + 2) as u16)));
+            screen += &format!(
+                "{}",
+                cursor::Goto(1, min(t_y, (bars.len() + messages.len() + 2) as u16))
+            );
             self.draw(screen).await?;
         }
         Err(anyhow!("UI failed to receive next message"))
@@ -131,9 +134,7 @@ impl UI {
 
     fn render(self) -> Task<()> {
         Task::spawn(async move {
-            self.mainloop()
-                .await
-                .expect("UI render failure");
+            self.mainloop().await.expect("UI render failure");
         })
     }
 }
@@ -182,7 +183,7 @@ fn get_bar(current: usize, total: usize, max_width: usize, msg: &str) -> Bar {
 pub struct Context {
     name: String,
     stdin: Receiver<String>,
-    stdout: Sender<(String,Message)>,
+    stdout: Sender<(String, Message)>,
 }
 
 impl Context {
@@ -191,12 +192,10 @@ impl Context {
     }
 
     pub async fn notify(&self, msg: &str) {
-        self.send(
-            Message::Notification(msg.to_string())
-        ).await
+        self.send(Message::Notification(msg.to_string())).await
     }
 
-    pub async fn quit(&self) -> anyhow::Result<(), RecvError>{
+    pub async fn quit(&self) -> anyhow::Result<(), RecvError> {
         let (tx, rx) = channel(1);
         self.send(Message::Quit(tx)).await;
         rx.recv().await
@@ -212,7 +211,7 @@ impl Context {
             let line = input.trim();
             if let Ok(x) = line.parse::<usize>() {
                 if x >= min && x < max {
-                    return Ok(x)
+                    return Ok(x);
                 }
             }
             self.notify(&format!("Invalid input: {:?}", &line)).await;
@@ -221,9 +220,8 @@ impl Context {
     }
 
     pub async fn progress(&self, current: u64, total: u64, msg: &str) {
-        self.send(
-            Message::Progress((current,total,msg.to_string()))
-        ).await
+        self.send(Message::Progress((current, total, msg.to_string())))
+            .await
     }
 
     async fn send(&self, msg: Message) {
