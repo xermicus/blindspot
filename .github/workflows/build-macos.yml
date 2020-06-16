@@ -9,9 +9,9 @@ env:
   CARGO_TERM_COLOR: always
 
 jobs:
-  build:
+  build-macos:
 
-    runs-on: ubuntu-latest
+    runs-on: macos-latest
 
     steps:
     - uses: actions/cache@v2
@@ -22,5 +22,5 @@ jobs:
           target
         key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
     - uses: actions/checkout@v2
-    - name: Build ELF
+    - name: Build darwin
       run: cargo build --verbose
