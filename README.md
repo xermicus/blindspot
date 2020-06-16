@@ -39,6 +39,9 @@ cargo install blindspot
 blindspot init --no-install
 ```
 
+## MacOS Users
+On a test device the `init` command failed to find the binary dir on MacOS. I set it manually `export BSPM_BIN_DIR=/Users/myuser/Applications/blindspot` and then added this to `$PATH`. Since I'm not used to MacOS I can't tell whether this is just a misconfigured device or generally the case with MacOS.
+
 # Usage
 The usage should not be too far off from what you'd expect from a package manager. View the [asciinema](https://asciinema.org/a/337585) to get the basic idea.
 
@@ -57,8 +60,7 @@ Use the `--help` flag to learn about the various subcommands.
 ## Shell completion
 Completions for the most popular shells are provided. Default is `bash`:
 ```bash
-blindspot completion >> ~/.bash_profile
-. ~/.bash_profile
+source <(blindspot completion)
 ```
 
 # Disclaimer

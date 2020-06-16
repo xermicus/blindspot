@@ -4,21 +4,18 @@ on:
     tags:
     - 'v*' # Push events to matching v*, i.e. v1.0, v20.15.10
 
-name: Upload Release Asset Linux
+name: Upload Release Asset MacOS
 
 jobs:
   build:
-    name: Upload Release Asset Linux
-    runs-on: ubuntu-latest
+    name: Upload Release Asset MacOS
+    runs-on: macos-latest
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
       - name: Build project
         run: |
           cargo build --release
-      - name: Strip
-        run: |
-          strip target/release/blindspot
       - name: Create Release
         id: create_release
         uses: actions/create-release@v1
@@ -37,5 +34,5 @@ jobs:
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }} # This pulls from the CREATE RELEASE step above, referencing it's ID to get its outputs object, which include a `upload_url`. See this blog post for more info: https://jasonet.co/posts/new-features-of-github-actions/#passing-data-to-future-steps 
           asset_path: ./target/release/blindspot
-          asset_name: blindspot_linux-x86_64
+          asset_name: blindspot_macos-x86_64
           asset_content_type: application/octet-stream
