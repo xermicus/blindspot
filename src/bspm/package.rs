@@ -91,6 +91,9 @@ impl Package {
             assets.len()
         ))
         .await;
+        if assets.is_empty() {
+            bail!("No assets in release")
+        }
         for (i, asset) in assets.iter().enumerate() {
             ctx.notify(&format!(
                 "{}-> {}{}\t{:.2}mb\t{}",
