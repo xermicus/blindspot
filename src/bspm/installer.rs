@@ -11,7 +11,7 @@ use async_std::prelude::*;
 use async_tar::Archive;
 use isahc::config::RedirectPolicy;
 use isahc::prelude::*;
-use smol::{Task, Timer};
+use smol::{self, Timer};
 
 use super::{data_path, ui};
 
@@ -83,7 +83,7 @@ impl Installer {
     async fn download(
         &self,
         ctx: ui::Context,
-        mut body_writer: Pin<Box<dyn async_std::io::Write>>,
+        mut body_writer: Pin<Box<dyn async_std::io::Write + Send>>,
     ) -> anyhow::Result<()> {
         let mut response = Request::get(&self.url)
             .metrics(true)
@@ -96,7 +96,7 @@ impl Installer {
         let metrics = response.metrics().unwrap().clone();
         let body = response.body_mut();
         let url = self.url.to_string();
-        let progresser = Task::spawn(async move {
+        let progresser = smol::spawn(async move {
             loop {
                 let progress = metrics.download_progress();
                 ctx.progress(progress.0 / 1_000, progress.1 / 1_000, &url)
@@ -227,7 +227,7 @@ impl Archived {
     ) -> anyhow::Result<()> {
         ctx.notify("Choose a file from Tar archive...").await;
         let mut file_index = 0;
-        let mut archive = Archive::new(async_std::fs::File::open(src).await?);
+        let archive = Archive::new(async_std::fs::File::open(src).await?);
         let mut entries = archive.entries()?;
         while let Some(file) = entries.next().await {
             let f = file?;
@@ -246,8 +246,7 @@ impl Archived {
             .ask_number(0, file_index, "Enter the file number to install:")
             .await?;
         file_index = 0;
-        let mut a = Archive::new(async_std::fs::File::open(src).await?);
-        let mut e = a.entries()?;
+        let mut e = Archive::new(async_std::fs::File::open(src).await?).entries()?;
         while let Some(file) = e.next().await {
             let mut f = file?;
             if pick == file_index {
@@ -292,7 +291,7 @@ pub enum Compression {
 }
 
 impl Compression {
-    fn writer(&self, file: File) -> Pin<Box<dyn async_std::io::Write>> {
+    fn writer(&self, file: File) -> Pin<Box<dyn async_std::io::Write + Send>> {
         match self {
             Compression::None => Box::pin(file),
             Compression::Gzip => Box::pin(GzipDecoder::new(file)),

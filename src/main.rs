@@ -8,5 +8,5 @@ mod bspm;
 mod cmd;
 
 fn main() -> anyhow::Result<()> {
-    smol::run(async { Command::from_args().go().await })
+    smol::block_on(async { Command::from_args().go().await })
 }

@@ -55,7 +55,7 @@ impl BSPM {
 
     pub async fn write_config(&self) -> anyhow::Result<()> {
         let path = cfg_path().await;
-        let y = serde_yaml::to_string(self)?;
+        let y = serde_yaml::to_string(&self)?;
         File::create(&path)
             .await
             .context(format!("Can not create file: {}", &path.display()))?
@@ -164,20 +164,19 @@ impl BSPM {
             }
             let pkg = pkg.clone();
             handles.push(std::thread::spawn(move || {
-                smol::run(async move {
+                smol::spawn(async move {
                     let result = pkg.update().await;
                     let ctx = context("❌", &pkg.name).await;
                     if result.is_err() {
                         ctx.notify(&format!("Update failed: {:?}", &result).replace("\n", "."))
                             .await;
                     }
-                    ctx.quit().await.expect("UI failure");
                     result
                 })
             }));
         }
         for handle in handles {
-            let updated = match handle.join().expect("Thread join failure") {
+            let updated = match handle.join().expect("Thread join failure").await {
                 Ok(pkg) => pkg,
                 Err(_) => continue,
             };

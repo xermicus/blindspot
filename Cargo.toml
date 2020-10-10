@@ -15,19 +15,19 @@ name="blindspot"
 path="src/main.rs"
 
 [dependencies]
-structopt = "0.3.14"
-smol = { version = "0.1.12", features = ["tokio02"] }
-serde = "1.0.111"
-serde_derive = "1.0.111"
+structopt = "0.3.19"
+smol = "1.2.4"
+serde = "1.0.116"
+serde_derive = "1.0.116"
 serde_yaml = "0.8.13"
-serde_json = "1.0.55"
-anyhow = "1.0.31"
-chrono = { version = "0.4.11", features = ["serde"] }
+serde_json = "1.0.58"
+anyhow = "1.0.33"
+chrono = { version = "0.4.19", features = ["serde"] }
 dirs-next = "1.0.1"
-async-std = "1.6.1"
-isahc = { version = "0.9.4", features = ["json"] }
-async-compression = { version = "0.3.4", features = ["futures-write", "gzip", "bzip2", "xz"] }
-async-tar = "0.1.1"
+async-std = "1.6.5"
+isahc = { version = "0.9.10", features = ["json"] }
+async-compression = { version = "0.3.5", features = ["futures-write", "gzip", "bzip2", "xz"] }
+async-tar = "0.3.0"
 termion = "1.5.5"
 progress_string = "0.1.1"
-once_cell = "1.4.0"
+once_cell = "1.4.1"

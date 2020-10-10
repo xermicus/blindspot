@@ -4,7 +4,7 @@ use async_std::prelude::*;
 use async_std::sync::{channel, Mutex, Receiver, RecvError, Sender};
 use once_cell::sync::Lazy;
 use progress_string::*;
-use smol::Task;
+use smol::{self, Task};
 use std::cmp::min;
 use std::collections::HashMap;
 use termion::{color, cursor, style};
@@ -99,7 +99,10 @@ impl UI {
             // Update
             let (t_x, t_y) = termion::terminal_size()?;
             match msg {
-                Message::Quit(tx) => tx.send(()).await,
+                Message::Quit(tx) => {
+                    tx.send(()).await;
+                    return Ok(());
+                }
                 Message::Notification(msg) => messages.push(fmt_msg(context, msg)),
                 Message::Question(msg) => self.read_line(&fmt_msg(context, msg)).await?,
                 Message::Progress(p) => {
@@ -133,7 +136,7 @@ impl UI {
     }
 
     fn render(self) -> Task<()> {
-        Task::spawn(async move {
+        smol::spawn(async move {
             self.mainloop().await.expect("UI render failure");
         })
     }
