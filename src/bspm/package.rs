@@ -116,7 +116,7 @@ impl Package {
         let ctx = context("🪐", &self.name).await;
         ctx.notify("Treating package as a GitHub repository").await;
         let url = format!("https://api.github.com/repos/{}/releases/latest", repo);
-        let mut response = Request::get(&url)
+        let mut response = isahc::Request::get(&url)
             .body(())
             .context("Failed to build request body")?
             .send_async()
@@ -125,7 +125,7 @@ impl Package {
         if response.status() != 200 {
             bail!("Status: {}\nURL: {}", &url, response.status())
         }
-        Ok(response.json()?)
+        Ok(response.json().await?)
     }
 }
 

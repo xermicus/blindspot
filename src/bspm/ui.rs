@@ -1,7 +1,8 @@
 use anyhow::anyhow;
+use async_std::channel::{bounded, Receiver, RecvError, Sender};
 use async_std::io::{stdin, stdout};
 use async_std::prelude::*;
-use async_std::sync::{channel, Mutex, Receiver, RecvError, Sender};
+use async_std::sync::Mutex;
 use once_cell::sync::Lazy;
 use progress_string::*;
 use smol::{self, Task};
@@ -38,8 +39,8 @@ pub enum Message {
 
 impl UI {
     fn new() -> Self {
-        let (stdin_send, stdin_recv) = channel(1);
-        let (stdout_send, stdout_recv) = channel(1);
+        let (stdin_send, stdin_recv) = bounded(1);
+        let (stdout_send, stdout_recv) = bounded(1);
         UI {
             stdin_send,
             stdin_recv,
@@ -67,7 +68,7 @@ impl UI {
             stdin.read(&mut buffer).await?;
             let chr = std::str::from_utf8(&buffer)?;
             if chr == "\n" {
-                self.stdin_send.send(answer_input).await;
+                self.stdin_send.send(answer_input).await?;
                 break;
             }
             answer_input += chr;
@@ -100,7 +101,7 @@ impl UI {
             let (t_x, t_y) = termion::terminal_size()?;
             match msg {
                 Message::Quit(tx) => {
-                    tx.send(()).await;
+                    tx.send(()).await?;
                     return Ok(());
                 }
                 Message::Notification(msg) => messages.push(fmt_msg(context, msg)),
@@ -199,7 +200,7 @@ impl Context {
     }
 
     pub async fn quit(&self) -> anyhow::Result<(), RecvError> {
-        let (tx, rx) = channel(1);
+        let (tx, rx) = bounded(1);
         self.send(Message::Quit(tx)).await;
         rx.recv().await
     }
@@ -228,6 +229,9 @@ impl Context {
     }
 
     async fn send(&self, msg: Message) {
-        self.stdout.send((self.name.clone(), msg)).await
+        self.stdout
+            .send((self.name.clone(), msg))
+            .await
+            .expect("internal channel error")
     }
 }

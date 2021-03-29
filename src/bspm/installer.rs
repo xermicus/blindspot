@@ -85,7 +85,7 @@ impl Installer {
         ctx: ui::Context,
         mut body_writer: Pin<Box<dyn async_std::io::Write + Send>>,
     ) -> anyhow::Result<()> {
-        let mut response = Request::get(&self.url)
+        let mut response = isahc::Request::get(&self.url)
             .metrics(true)
             .redirect_policy(RedirectPolicy::Limit(50))
             .body(())
@@ -140,6 +140,9 @@ impl Installer {
         }
         if self.url.ends_with(".txz") {
             return Archived::Tar;
+        }
+        if self.url.ends_with(".zip") {
+            return Archived::Zip;
         }
         Archived::None
     }
@@ -201,6 +204,7 @@ impl Installer {
 pub enum Archived {
     None,
     Tar,
+    Zip,
 }
 
 impl Archived {
@@ -215,6 +219,7 @@ impl Archived {
         match &self {
             Archived::None => move_exe(src, dest).await?,
             Archived::Tar => self.install_tar(ctx, src, dest).await?,
+            Archived::Zip => self.install_tar(ctx, src, dest).await?,
         }
         Ok(())
     }
@@ -266,8 +271,8 @@ impl Archived {
         Ok(())
     }
 
-    pub fn variants() -> [&'static str; 2] {
-        ["tar", "none"]
+    pub fn variants() -> [&'static str; 3] {
+        ["tar", "zip", "none"]
     }
 }
 
@@ -276,6 +281,7 @@ impl std::str::FromStr for Archived {
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         match s {
             "tar" => Ok(Archived::Tar),
+            "zip" => Ok(Archived::Zip),
             "none" => Ok(Archived::None),
             _ => Err(format!("Invalid archive: {}", s)),
         }
