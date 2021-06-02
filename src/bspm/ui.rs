@@ -42,10 +42,10 @@ impl UI {
         let (stdin_send, stdin_recv) = bounded(1);
         let (stdout_send, stdout_recv) = bounded(1);
         UI {
-            stdin_send,
-            stdin_recv,
             stdout_send,
             stdout_recv,
+            stdin_send,
+            stdin_recv,
         }
     }
 
@@ -54,8 +54,8 @@ impl UI {
         let stdout = self.stdout_send.clone();
         Context {
             name,
-            stdout,
             stdin,
+            stdout,
         }
     }
 

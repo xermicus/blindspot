@@ -69,14 +69,14 @@ pub enum Command {
 
 impl Command {
     pub async fn go(&self) -> anyhow::Result<()> {
-        let bspm = BSPM::new()
+        let bspm = Bspm::new()
             .await
             .context("BSPM failed to start\nTry `bspm init` if you are running it the first time");
         match self {
             Command::Init { no_install } => {
-                BSPM::default().create_config().await?;
+                Bspm::default().create_config().await?;
                 if !no_install {
-                    BSPM::new()
+                    Bspm::new()
                         .await?
                         .install(
                             "blindspot".to_string(),

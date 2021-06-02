@@ -17,12 +17,12 @@ pub mod ui;
 use ui::context;
 
 #[derive(Serialize, Deserialize, Default, Debug)]
-pub struct BSPM {
+pub struct Bspm {
     packages: Vec<Package>,
 }
 
-impl BSPM {
-    pub async fn new() -> anyhow::Result<BSPM> {
+impl Bspm {
+    pub async fn new() -> anyhow::Result<Bspm> {
         let path = cfg_path().await;
         let mut buffer = String::new();
         File::open(&path)

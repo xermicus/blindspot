@@ -1,5 +1,5 @@
 use std::os::unix::fs::PermissionsExt;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::pin::Pin;
 use std::time::Duration;
 
@@ -225,28 +225,18 @@ pub enum Archived {
 }
 
 impl Archived {
-    async fn install(
-        &self,
-        ctx: &ui::Context,
-        src: &PathBuf,
-        dest: &PathBuf,
-    ) -> anyhow::Result<()> {
+    async fn install(&self, ctx: &ui::Context, src: &Path, dest: &Path) -> anyhow::Result<()> {
         ctx.notify(&format!("Installing into {}", dest.display()))
             .await;
         match &self {
-            Archived::None => move_exe(src, dest).await?,
+            Archived::None => move_exe(&src.to_path_buf(), dest).await?,
             Archived::Tar => self.install_tar(ctx, src, dest).await?,
             Archived::Zip => self.install_tar(ctx, src, dest).await?,
         }
         Ok(())
     }
 
-    async fn install_tar(
-        &self,
-        ctx: &ui::Context,
-        src: &PathBuf,
-        dest: &PathBuf,
-    ) -> anyhow::Result<()> {
+    async fn install_tar(&self, ctx: &ui::Context, src: &Path, dest: &Path) -> anyhow::Result<()> {
         ctx.notify("Choose a file from Tar archive...").await;
         let mut file_index = 0;
         let archive = Archive::new(async_std::fs::File::open(src).await?);
@@ -341,7 +331,7 @@ impl std::str::FromStr for Compression {
     }
 }
 
-async fn move_exe(src: &PathBuf, dest: &PathBuf) -> anyhow::Result<(), std::io::Error> {
+async fn move_exe(src: &Path, dest: &Path) -> anyhow::Result<(), std::io::Error> {
     copy(src, dest).await?;
     remove_file(src).await?;
     let meta = dest.metadata()?;
