@@ -73,11 +73,28 @@ impl Installer {
 
     pub async fn uninstall(&self, ctx: &ui::Context) -> anyhow::Result<(), std::io::Error> {
         if let Some(backup) = &self.backup {
-            remove_file(backup).await?;
+            ctx.notify(&format!("Deleting file {}", &backup.display()))
+                .await;
+            if let Err(err) = remove_file(backup).await {
+                ctx.notify(&format!(
+                    "Warning: Failed to remove file {}: {}",
+                    self.path.display(),
+                    err
+                ))
+                .await;
+            }
         }
         ctx.notify(&format!("Deleting file {}", self.path.display()))
             .await;
-        remove_file(&self.path).await
+        if let Err(err) = remove_file(&self.path).await {
+            ctx.notify(&format!(
+                "Warning: Failed to remove file {}: {}",
+                self.path.display(),
+                err
+            ))
+            .await;
+        }
+        Ok(())
     }
 
     async fn download(
