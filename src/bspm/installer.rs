@@ -323,8 +323,8 @@ impl std::str::FromStr for Compression {
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         match s {
             "gzip" => Ok(Compression::Gzip),
-            "bzip2" => Ok(Compression::Gzip),
-            "xz" => Ok(Compression::Gzip),
+            "bzip2" => Ok(Compression::Bzip2),
+            "xz" => Ok(Compression::Xz),
             "none" => Ok(Compression::None),
             _ => Err(format!("Invalid compression: {}", s)),
         }
